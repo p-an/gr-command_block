@@ -1,0 +1,63 @@
+<block>
+  <name>Command sink</name>
+  <key>command_block_sink</key>
+  <category>Command_block</category>
+  <import>import command_block</import>
+  <make>command_block.command($in_type.size, 0, $cmd, 1, $blocking)</make>
+    <param>
+        <name>Input Type</name>
+        <key>in_type</key>
+        <value>float</value>
+        <type>enum</type>
+        <option>
+            <name>Complex</name>
+            <key>complex</key>
+            <opt>size:gr.sizeof_gr_complex</opt>
+        </option>
+        <option>
+            <name>Float</name>
+            <key>float</key>
+            <opt>size:gr.sizeof_float</opt>
+        </option>
+        <option>
+            <name>Int</name>
+            <key>int</key>
+            <opt>size:gr.sizeof_int</opt>
+        </option>
+        <option>
+            <name>Short</name>
+            <key>short</key>
+            <opt>size:gr.sizeof_short</opt>
+        </option>
+        <option>
+            <name>Byte</name>
+            <key>byte</key>
+            <opt>size:gr.sizeof_char</opt>
+        </option>
+    </param>
+
+  <param>
+    <name>command</name>
+    <key>cmd</key>
+    <type>string</type>
+  </param>
+  <param>
+    <name>Blocking IO</name>
+    <key>blocking</key>
+    <value>0</value>
+    <type>enum</type>
+    <option>
+      <name>none</name>
+      <key>0</key>
+    </option>
+    <option>
+      <name>in</name>
+      <key>1</key>
+    </option>
+  </param>
+  <sink>
+    <name>in</name>
+    <type>$in_type</type>
+    <nports>1</nports>
+  </sink>
+</block>

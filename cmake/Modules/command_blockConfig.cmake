@@ -1,0 +1,30 @@
+INCLUDE(FindPkgConfig)
+PKG_CHECK_MODULES(PC_COMMAND_BLOCK command_block)
+
+FIND_PATH(
+    COMMAND_BLOCK_INCLUDE_DIRS
+    NAMES command_block/api.h
+    HINTS $ENV{COMMAND_BLOCK_DIR}/include
+        ${PC_COMMAND_BLOCK_INCLUDEDIR}
+    PATHS ${CMAKE_INSTALL_PREFIX}/include
+          /usr/local/include
+          /usr/include
+)
+
+FIND_LIBRARY(
+    COMMAND_BLOCK_LIBRARIES
+    NAMES gnuradio-command_block
+    HINTS $ENV{COMMAND_BLOCK_DIR}/lib
+        ${PC_COMMAND_BLOCK_LIBDIR}
+    PATHS ${CMAKE_INSTALL_PREFIX}/lib
+          ${CMAKE_INSTALL_PREFIX}/lib64
+          /usr/local/lib
+          /usr/local/lib64
+          /usr/lib
+          /usr/lib64
+)
+
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(COMMAND_BLOCK DEFAULT_MSG COMMAND_BLOCK_LIBRARIES COMMAND_BLOCK_INCLUDE_DIRS)
+MARK_AS_ADVANCED(COMMAND_BLOCK_LIBRARIES COMMAND_BLOCK_INCLUDE_DIRS)
+

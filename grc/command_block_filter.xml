@@ -1,0 +1,113 @@
+<block>
+  <name>Command filter</name>
+  <key>command_block_filter</key>
+  <category>Command_block</category>
+  <import>import command_block</import>
+  <make>command_block.command($in_type.size, $out_type.size, $cmd, $io_ratio, $blocking)</make>
+    <param>
+        <name>Input Type</name>
+        <key>in_type</key>
+        <value>float</value>
+        <type>enum</type>
+        <option>
+            <name>Complex</name>
+            <key>complex</key>
+            <opt>size:gr.sizeof_gr_complex</opt>
+        </option>
+        <option>
+            <name>Float</name>
+            <key>float</key>
+            <opt>size:gr.sizeof_float</opt>
+        </option>
+        <option>
+            <name>Int</name>
+            <key>int</key>
+            <opt>size:gr.sizeof_int</opt>
+        </option>
+        <option>
+            <name>Short</name>
+            <key>short</key>
+            <opt>size:gr.sizeof_short</opt>
+        </option>
+        <option>
+            <name>Byte</name>
+            <key>byte</key>
+            <opt>size:gr.sizeof_char</opt>
+        </option>
+    </param>
+    <param>
+        <name>Output Type</name>
+        <key>out_type</key>
+        <value>float</value>
+        <type>enum</type>
+        <option>
+            <name>Complex</name>
+            <key>complex</key>
+            <opt>size:gr.sizeof_gr_complex</opt>
+        </option>
+        <option>
+            <name>Float</name>
+            <key>float</key>
+            <opt>size:gr.sizeof_float</opt>
+        </option>
+        <option>
+            <name>Int</name>
+            <key>int</key>
+            <opt>size:gr.sizeof_int</opt>
+        </option>
+        <option>
+            <name>Short</name>
+            <key>short</key>
+            <opt>size:gr.sizeof_short</opt>
+        </option>
+        <option>
+            <name>Byte</name>
+            <key>byte</key>
+            <opt>size:gr.sizeof_char</opt>
+        </option>
+    </param>
+
+  <param>
+    <name>command</name>
+    <key>cmd</key>
+    <type>string</type>
+  </param>
+  <param>
+    <name>IO Ratio</name>
+    <key>io_ratio</key>
+    <value>1</value>
+    <type>real</type>
+  </param>
+  <param>
+    <name>Blocking IO</name>
+    <key>blocking</key>
+    <value>3</value>
+    <type>enum</type>
+    <option>
+      <name>none</name>
+      <key>0</key>
+    </option>
+    <option>
+      <name>in</name>
+      <key>1</key>
+    </option>
+    <option>
+      <name>out</name>
+      <key>2</key>
+    </option>
+    <option>
+      <name>both</name>
+      <key>3</key>
+    </option>
+  </param>
+  <sink>
+    <name>in</name>
+    <type>$in_type</type>
+    <nports>1</nports>
+  </sink>
+  <source>
+    <name>out</name>
+    <type>$out_type</type>
+    <nports>1</nports>
+  </source>
+</block>
