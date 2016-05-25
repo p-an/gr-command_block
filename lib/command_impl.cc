@@ -166,9 +166,9 @@ namespace gr {
       }
 
       if (WIFEXITED(pstat))
-        std::cerr << "Process exited with code " << WEXITSTATUS(pstat) << std::endl;
+        std::cerr << "Process \"" << cmd << "\" exited with code " << WEXITSTATUS(pstat) << std::endl;
       else
-        std::cerr << "Abnormal process termination" << std::endl;
+        std::cerr << "\"" << cmd << "\" Abnormal process termination" << std::endl;
 
       return true;
     }
