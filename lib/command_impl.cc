@@ -27,6 +27,7 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <string.h>
 
 //#define DBG(f, x...) {fprintf(stderr,"[%s() %d %p]: " f, __func__, __LINE__ ,this, ##x); fflush(stderr);}
 //#define DBG(f, x...) {fprintf(stdout,"[%s() %d %p]: " f, __func__, __LINE__ ,this, ##x); fflush(stdout);}
@@ -52,8 +53,10 @@ namespace gr {
       : gr::block("command",
               gr::io_signature::make(0, (in_item_size > 0)?1:0, in_item_size),
               gr::io_signature::make(0, (out_item_size > 0)?1:0, out_item_size)),
-          cmd(cmd),io_ratio(io_ratio),in_item_size(in_item_size),out_item_size(out_item_size),blocking(blocking)
+          io_ratio(io_ratio),in_item_size(in_item_size),out_item_size(out_item_size),blocking(blocking)
     {
+        this->cmd = new char [strlen(cmd)];
+        strcpy(this->cmd,cmd);
         type = 0;
         if(in_item_size > 0)type |= TYPE_IN;
         if(out_item_size > 0)type |= TYPE_OUT;
@@ -66,6 +69,7 @@ namespace gr {
      */
     command_impl::~command_impl()
     {
+      delete cmd;
     }
 
     bool command_impl::start(){
@@ -94,7 +98,7 @@ namespace gr {
           close(stdout_pipe[1]);
           close(stdout_pipe[0]);
         }
-        
+        DBG("'%s'\n",cmd)
         execl("/bin/sh", "sh", "-c", cmd, NULL);
 
         exit(EXIT_FAILURE);

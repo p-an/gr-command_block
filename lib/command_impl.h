@@ -692,7 +692,7 @@ namespace gr {
 
       int type;
 
-      const char * cmd;
+      char * cmd;
       double io_ratio;
       int blocking;
 
