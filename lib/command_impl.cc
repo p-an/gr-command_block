@@ -55,7 +55,7 @@ namespace gr {
               gr::io_signature::make(0, (out_item_size > 0)?1:0, out_item_size)),
           io_ratio(io_ratio),in_item_size(in_item_size),out_item_size(out_item_size),blocking(blocking)
     {
-        this->cmd = new char [strlen(cmd)];
+        this->cmd = new char [strlen(cmd) + 1];
         strcpy(this->cmd,cmd);
         type = 0;
         if(in_item_size > 0)type |= TYPE_IN;
