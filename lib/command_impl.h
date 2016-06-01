@@ -697,14 +697,14 @@ namespace gr {
       int blocking;
 
       pid_t pid;
-      int stdin_pipe[2];
-      int stdout_pipe[2];
-
-      FILE * cmd_out;
-      FILE * cmd_in;
+      int cmd_in_fd;
+      int cmd_out_fd;
 
       size_t in_item_size;
       size_t out_item_size;
+
+      uint64_t total_consumed;
+      uint64_t total_produced;
 
      public:
       command_impl(size_t in_item_size, size_t out_item_size, const char* cmd, double io_ratio, int blocking);
