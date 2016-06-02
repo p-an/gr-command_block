@@ -63,10 +63,15 @@ namespace gr {
         type = 0;
         if(in_item_size > 0)type |= TYPE_IN;
         if(out_item_size > 0)type |= TYPE_OUT;
+        w_byte_corr = 0;
+        r_byte_corr = 0;
+        r_byte_corr_buff = new uint8_t[out_item_size];
+
         DBG("in %d out %d cmd \"%s\"\n",(type & TYPE_IN),(type & TYPE_OUT)>>1, cmd);
         DBG("blocking in %d out %d\n",blocking & BLOCKING_IN, (blocking & BLOCKING_OUT)>>1);
         total_consumed = 0;
         total_produced = 0;
+
     }
 
     /*
@@ -176,6 +181,7 @@ namespace gr {
       if(e>(in_item_size - 1))e=0;
       if(e > 0 && count > e){// && strstr(cmd,"fcl")){
         count -= e;
+        DBG("%d\n",e);
       }
       return write(fd,buf,count);
     }
@@ -183,11 +189,19 @@ namespace gr {
     ssize_t command_impl::err_read(int fd, void *buf, size_t count){
       int e = 0;
       e = rand() % 10;
+
       if(e>(out_item_size - 1))e=0;
-      if(e > 0 && count > e){// && strstr(cmd,"fcl")){
+      if(count > 0 && e > 0 && count > e){// && strstr(cmd,"fcl")){
         count -= e;
+        DBG("%d\n",e);
       }
-      return read(fd,buf,count);
+
+      /*
+      e = e * out_item_size;
+      if(count > e)count -= e;
+      */
+      ssize_t rc = read(fd,buf,count);
+      return rc;
     }
 
     int
@@ -198,8 +212,6 @@ namespace gr {
     {
       int produced = 0;
       int consumed = 0;
-
-      static int w_byte_corr = 0;
 
       if(type & TYPE_IN){
         uint8_t *in = (uint8_t *) input_items[0];
@@ -227,7 +239,10 @@ namespace gr {
       if(type & TYPE_OUT){
         uint8_t * out = (uint8_t *) output_items[0];
         size_t n_items_out = noutput_items;
-        ssize_t c = read(cmd_out_fd,out,n_items_out*out_item_size);
+        memcpy(out,r_byte_corr_buff,r_byte_corr);
+        //out += r_byte_corr;
+        if(r_byte_corr>0)n_items_out--;
+        ssize_t c = err_read(cmd_out_fd,out + r_byte_corr ,n_items_out*out_item_size);
         if(c < 0){
           if(errno == EAGAIN || errno == EWOULDBLOCK){
             //DBG("EAGAIN\n");
@@ -235,17 +250,21 @@ namespace gr {
             throw errno_exception("read()", errno);
           }
         }else{
+          c += r_byte_corr;
           if(c % out_item_size != 0){
             DBG("c %% out_item_size = %d (%d, %d)\n",c % out_item_size,out_item_size*n_items_out,c);
-          }
+            r_byte_corr = c % out_item_size;
+            memcpy(r_byte_corr_buff,out + (c-r_byte_corr),r_byte_corr);
+          }else r_byte_corr = 0;
           produced = c / out_item_size;
+          if(produced > noutput_items)DBG("produced > noutput_items %d\n",produced - noutput_items);
           if(produced == 0)produced = -1; //EOF
         }
       }
 
       total_produced += produced * out_item_size;
       total_consumed += consumed * in_item_size;
-      //DBG("e %d out %" PRIu64 " in %" PRIu64 " out/in %f\n",e,total_produced,total_consumed,((float)total_produced)/total_consumed);
+      //if(produced != 0)DBG("out %" PRIu64 " in %" PRIu64 " out/in %f\n",total_produced,total_consumed,((float)total_produced)/total_consumed);
 
       // Tell runtime system how many output items we produced.
       return produced;

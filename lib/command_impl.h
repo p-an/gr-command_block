@@ -703,6 +703,13 @@ namespace gr {
       size_t in_item_size;
       size_t out_item_size;
 
+      int w_byte_corr;
+
+      int r_byte_corr;
+      uint8_t * r_byte_corr_buff;
+
+
+      //debugging
       uint64_t total_consumed;
       uint64_t total_produced;
 
