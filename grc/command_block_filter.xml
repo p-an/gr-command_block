@@ -81,7 +81,7 @@
   <param>
     <name>Blocking IO</name>
     <key>blocking</key>
-    <value>3</value>
+    <value>0</value>
     <type>enum</type>
     <option>
       <name>none</name>
