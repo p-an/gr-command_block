@@ -33,8 +33,8 @@
 
 //#define DBG(f, x...) {fprintf(stdout,"[%s() %d %p]: " f, __func__, __LINE__ ,this, ##x); fflush(stdout);}
 //#define DBG(f, x...) {fprintf(stderr,"[%s() %d]: " f, __func__, __LINE__ ,##x); fflush(stderr);}
-#define DBG(f, x...) {fprintf(stderr,"[%s() %d %p]: " f, __func__, __LINE__ ,this, ##x); fflush(stderr);}
-//#define DBG(f, x...)
+//#define DBG(f, x...) {fprintf(stderr,"[%s() %d %p]: " f, __func__, __LINE__ ,this, ##x); fflush(stderr);}
+#define DBG(f, x...)
 
 namespace gr {
   namespace command_block {
@@ -175,34 +175,6 @@ namespace gr {
         if(ninput_items_required[0] < min)ninput_items_required[0]=min;
     }
 
-    ssize_t command_impl::err_write(int fd, const void *buf, size_t count){
-      int e = 0;
-      e = rand() % 10;
-      if(e>(in_item_size - 1))e=0;
-      if(e > 0 && count > e){// && strstr(cmd,"fcl")){
-        count -= e;
-        DBG("%d\n",e);
-      }
-      return write(fd,buf,count);
-    }
-
-    ssize_t command_impl::err_read(int fd, void *buf, size_t count){
-      int e = 0;
-      e = rand() % 10;
-
-      if(e>(out_item_size - 1))e=0;
-      if(count > 0 && e > 0 && count > e){// && strstr(cmd,"fcl")){
-        count -= e;
-        DBG("%d\n",e);
-      }
-
-      /*
-      e = e * out_item_size;
-      if(count > e)count -= e;
-      */
-      ssize_t rc = read(fd,buf,count);
-      return rc;
-    }
 
     int
     command_impl::general_work (int noutput_items,
@@ -217,7 +189,7 @@ namespace gr {
         uint8_t *in = (uint8_t *) input_items[0];
         size_t n_items_in = ninput_items[0];
 
-        ssize_t c = err_write(cmd_in_fd,in + w_byte_corr ,in_item_size*n_items_in - w_byte_corr);
+        ssize_t c = write(cmd_in_fd,in + w_byte_corr ,in_item_size*n_items_in - w_byte_corr);
         if(c < 0){
           if(errno == EAGAIN || errno == EWOULDBLOCK){
             //DBG("EAGAIN\n");
@@ -226,11 +198,7 @@ namespace gr {
           }
         }else{
           c += w_byte_corr;
-          if(c % in_item_size != 0){
-            DBG("c %% in_item_size = %d (%d, %d)\n",c % in_item_size,in_item_size*n_items_in,c);
-            w_byte_corr = c % in_item_size;
-          }else w_byte_corr = 0;
-          //if(in_item_size*n_items_in != c)DBG("short write %d\n",in_item_size*n_items_in - c);
+          w_byte_corr = c % in_item_size;
           consumed = c / in_item_size;
           consume_each(consumed);
         }
@@ -240,9 +208,8 @@ namespace gr {
         uint8_t * out = (uint8_t *) output_items[0];
         size_t n_items_out = noutput_items;
         memcpy(out,r_byte_corr_buff,r_byte_corr);
-        //out += r_byte_corr;
         if(r_byte_corr>0)n_items_out--;
-        ssize_t c = err_read(cmd_out_fd,out + r_byte_corr ,n_items_out*out_item_size);
+        ssize_t c = read(cmd_out_fd,out + r_byte_corr ,n_items_out*out_item_size);
         if(c < 0){
           if(errno == EAGAIN || errno == EWOULDBLOCK){
             //DBG("EAGAIN\n");
@@ -251,14 +218,12 @@ namespace gr {
           }
         }else{
           c += r_byte_corr;
-          if(c % out_item_size != 0){
-            DBG("c %% out_item_size = %d (%d, %d)\n",c % out_item_size,out_item_size*n_items_out,c);
-            r_byte_corr = c % out_item_size;
+          r_byte_corr = c % out_item_size;
+          if(r_byte_corr != 0){
             memcpy(r_byte_corr_buff,out + (c-r_byte_corr),r_byte_corr);
-          }else r_byte_corr = 0;
+          }
           produced = c / out_item_size;
-          if(produced > noutput_items)DBG("produced > noutput_items %d\n",produced - noutput_items);
-          if(produced == 0)produced = -1; //EOF
+          if(c == 0)produced = -1; //EOF
         }
       }
 
@@ -307,6 +272,31 @@ namespace gr {
       return std::runtime_error(s.str());
     }
 
+#ifdef test_byte_corr
+    ssize_t command_impl::err_write(int fd, const void *buf, size_t count){
+      int e = 0;
+      e = rand() % 10;
+      if(e>(in_item_size - 1))e=0;
+      if(e > 0 && count > e){
+        count -= e;
+        DBG("%d\n",e);
+      }
+      return write(fd,buf,count);
+    }
+
+    ssize_t command_impl::err_read(int fd, void *buf, size_t count){
+      int e = 0;
+      e = rand() % 10;
+
+      if(e>(out_item_size - 1))e=0;
+      if(count > 0 && e > 0 && count > e){
+        count -= e;
+        DBG("%d\n",e);
+      }
+      ssize_t rc = read(fd,buf,count);
+      return rc;
+    }
+#endif
 
   } /* namespace command_block */
 } /* namespace gr */

@@ -713,8 +713,10 @@ namespace gr {
       uint64_t total_consumed;
       uint64_t total_produced;
 
+#ifdef test_byte_corr
       ssize_t err_write(int fd, const void *buf, size_t count);
       ssize_t err_read(int fd, void *buf, size_t count);
+#endif
 
      public:
       command_impl(size_t in_item_size, size_t out_item_size, const char* cmd, double io_ratio, int blocking);
