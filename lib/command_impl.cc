@@ -33,8 +33,8 @@
 
 //#define DBG(f, x...) {fprintf(stdout,"[%s() %d %p]: " f, __func__, __LINE__ ,this, ##x); fflush(stdout);}
 //#define DBG(f, x...) {fprintf(stderr,"[%s() %d]: " f, __func__, __LINE__ ,##x); fflush(stderr);}
-//#define DBG(f, x...) {fprintf(stderr,"[%s() %d %p]: " f, __func__, __LINE__ ,this, ##x); fflush(stderr);}
-#define DBG(f, x...)
+#define DBG(f, x...) {fprintf(stderr,"[%s() %d %p]: " f, __func__, __LINE__ ,this, ##x); fflush(stderr);}
+//#define DBG(f, x...)
 
 namespace gr {
   namespace command_block {
@@ -143,7 +143,7 @@ namespace gr {
       int i;
       int pstat;
 
-      DBG("cmd %s out %" PRIu64 " in %" PRIu64 " %f\n",cmd,total_produced,total_consumed,((float)total_produced)/total_consumed);
+      DBG("cmd %s out %" PRIu64 " in %" PRIu64 " out/in %f\n",cmd,total_produced,total_consumed,((float)total_produced)/total_consumed);
 
       kill(pid,SIGTERM);
       do {
@@ -170,6 +170,26 @@ namespace gr {
         if(ninput_items_required[0] < min)ninput_items_required[0]=min;
     }
 
+    ssize_t command_impl::err_write(int fd, const void *buf, size_t count){
+      int e = 0;
+      e = rand() % 10;
+      if(e>(in_item_size - 1))e=0;
+      if(e > 0 && count > e){// && strstr(cmd,"fcl")){
+        count -= e;
+      }
+      return write(fd,buf,count);
+    }
+
+    ssize_t command_impl::err_read(int fd, void *buf, size_t count){
+      int e = 0;
+      e = rand() % 10;
+      if(e>(out_item_size - 1))e=0;
+      if(e > 0 && count > e){// && strstr(cmd,"fcl")){
+        count -= e;
+      }
+      return read(fd,buf,count);
+    }
+
     int
     command_impl::general_work (int noutput_items,
                        gr_vector_int &ninput_items,
@@ -179,11 +199,13 @@ namespace gr {
       int produced = 0;
       int consumed = 0;
 
+      static int w_byte_corr = 0;
+
       if(type & TYPE_IN){
         uint8_t *in = (uint8_t *) input_items[0];
         size_t n_items_in = ninput_items[0];
 
-        ssize_t c = write(cmd_in_fd,in,in_item_size*n_items_in);
+        ssize_t c = err_write(cmd_in_fd,in + w_byte_corr ,in_item_size*n_items_in - w_byte_corr);
         if(c < 0){
           if(errno == EAGAIN || errno == EWOULDBLOCK){
             //DBG("EAGAIN\n");
@@ -191,13 +213,13 @@ namespace gr {
             throw errno_exception("write()", errno);
           }
         }else{
+          c += w_byte_corr;
           if(c % in_item_size != 0){
-            DBG("c %% in_item_size %d\n",c % in_item_size);
-            DBG("%d %d\n",in_item_size*n_items_in,c);
-          }
-          if(in_item_size*n_items_in != c)DBG("short write %d\n",in_item_size*n_items_in - c);
+            DBG("c %% in_item_size = %d (%d, %d)\n",c % in_item_size,in_item_size*n_items_in,c);
+            w_byte_corr = c % in_item_size;
+          }else w_byte_corr = 0;
+          //if(in_item_size*n_items_in != c)DBG("short write %d\n",in_item_size*n_items_in - c);
           consumed = c / in_item_size;
-          //consumed = n_items_in;
           consume_each(consumed);
         }
       }
@@ -214,16 +236,16 @@ namespace gr {
           }
         }else{
           if(c % out_item_size != 0){
-            DBG("c %% out_item_size %d\n",c % out_item_size);
-            DBG("%d %d\n",out_item_size,c);
+            DBG("c %% out_item_size = %d (%d, %d)\n",c % out_item_size,out_item_size*n_items_out,c);
           }
           produced = c / out_item_size;
           if(produced == 0)produced = -1; //EOF
         }
       }
 
-          total_produced += produced * out_item_size;
-          total_consumed += consumed * in_item_size;
+      total_produced += produced * out_item_size;
+      total_consumed += consumed * in_item_size;
+      //DBG("e %d out %" PRIu64 " in %" PRIu64 " out/in %f\n",e,total_produced,total_consumed,((float)total_produced)/total_consumed);
 
       // Tell runtime system how many output items we produced.
       return produced;
